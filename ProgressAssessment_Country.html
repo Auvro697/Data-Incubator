@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <title>Progress Assessment Graphs</title>
+    <style>
+        @media print {
+        body * {
+          visibility: hidden;
+        }
+        header nav, footer {
+        display: none;
+        }
+        /* Default left, right, top, bottom margin is 2cm */
+        @page {
+          width:100%;
+          margin: 1cm;
+        }
+
+
+        #snapshot-print, #snapshot-print * {
+          visibility: visible;
+          page-break-inside : avoid;
+        }
+        #snapshot-print {
+          position: absolute;
+          left: 0;
+          top: 0;
+          zoom: 75%;
+        }
+
+        #dashboard-print, #dashboard-print * {
+          visibility: visible;
+        }
+        #dashboard-print {
+          position: absolute;
+          left: 0;
+          top: 0;
+        }
+        .card-columns{
+          page-break-inside:avoid;
+        }
+        #magnitude-print, #magnitude-print * {
+          visibility: visible;
+          page-break-inside : avoid;
+        }
+        #magnitude-print {
+          position: absolute;
+          left: 0;
+          top: 0;
+          zoom: 55%;
+        }
+
+
+    }
+    </style>
+  </head>
+  <body>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.min.js"></script>
+    <script src="js/d3.v4.min.js"></script>
+  	<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script type="text/javascript" src="js/snapshot-graph.js"></script>
+    <script type="text/javascript" src="js/dashboard-graph.js"></script>
+    <script type="text/javascript" src="js/magnitude-graph.js"></script>
+
+    <div class="row" style="padding-top:10px;padding-left:300px;">
+      <h2>SDG Progress Assessment Graphs</h2><br>
+    </div>
+
+
+    <div class="row">
+      <div class="container">
+        <ul class="nav nav-pills nav-justified" id="pills-tab" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="snapshot-tab" data-toggle="pill" href="#pills-snapshot" role="tab" aria-controls="pills-snapshot" aria-selected="true">Progress so far: Snapshot</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="dashboard-tab" data-toggle="pill" href="#pills-dashboard" role="tab" aria-controls="pills-dashboard" aria-selected="false">Anticipated Progress: Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="magnitude-tab" data-toggle="pill" href="#pills-magnitude" role="tab" aria-controls="pills-magnitude" aria-selected="false">Progress Gap: Magnitude</a>
+          </li>
+        </ul>
+        <div class="tab-content" id="pills-tabContent">
+          <div class="tab-pane active in" id="pills-snapshot" role="tabpanel" aria-labelledby="snapshot-tab">
+            <div id="snapshot-print" class="container" style="padding-top:15px;">
+              <div class="row d-print-block" style="justify-content:center;"><h3 class="text-center" id="snapshot-title"></h3></div>
+              <div class="d-none d-print-inline-block">
+                <p>About the chart</p>
+                <p>
+                  How much progress has been made on each of the 17 Goals? The length of each bar shows the progress of the country since 2000.
+                  If a bar reaches or crosses the 2018 line, the country has made the expected progress to date. However, whether a Goal can be
+                  achieved by 2030 depends not only on the distance traveled so far, but also on the pace of progress going forward, as reflected
+                  in the Dashboard below.
+                </p>
+              </div>
+              <div class="row d-print-block">
+                <table id="snap-graph-legend" class="table table-sm">
+                  <tr>
+                    <td><svg width="15px" height="15px"><rect width="15px" height="15px" style="fill:#ff4b50;"></rect></svg></td>
+                    <td><span class="font-weight-bold">Regressed</span> since 2000</td>
+                    <td><svg width="15px" height="15px"><rect width="15px" height="15px" style="fill:#00A8E2"></rect></svg></td>
+                    <td><span class="font-weight-bold">Progress made</span> since 2000</td>
+                    <td><svg width="15px" height="15px"><rect width="15px" height="15px" style="fill:#cccccc"></rect></svg></td>
+                    <td><span class="font-weight-bold">Progress needed</span> to achieve target in 2030</td>
+                    <td id="strip-legend"></td>
+                    <script>
+                    var  margin = {top: 5, right: 5, bottom: 5, left: 5};
+                    var snap_legend_svg = d3.select("#strip-legend").append("svg")
+                                          .attr("width", 80 + margin.left + margin.right)
+                                          .attr("height", 15 + margin.top + margin.bottom)
+                                          .attr("id", "d3-plot-legend");
+
+                        snap_legend_svg.append('defs')
+                                    		.append('pattern')
+                                    			.attr('id', 'diagonalHatch2')
+                                    			.attr('patternUnits', 'userSpaceOnUse')
+                                    			.attr('width', 4)
+                                    			.attr('height', 4)
+                                    		.append('path')
+                                    			.attr('d', 'M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2')
+                                    			.attr('stroke', '#ffffff')
+                                    			.attr('stroke-width', 1);
+
+                        var strip_rect1 = snap_legend_svg.append("g")
+                                          .attr("class", "legend")
+                                          .attr('id',"rect_4")
+                                          .attr("transform", "translate(0,5)");
+
+                        strip_rect1.append("rect")
+                          .attr("width", "15px")
+                          .attr("height", "15px")
+                          .attr("transform","translate(5,5)")
+                          .style("fill","#00A8E2");
+
+                        strip_rect1.append("rect")
+                        .attr("width", "15px")
+                        .attr("height", "15px")
+                        .attr("transform","translate(5,5)")
+                        .style("fill",'url(#diagonalHatch2)');
+
+                var strip_rect2 = snap_legend_svg.append("g")
+                      .attr("class", "legend")
+                      .attr('id',"rect_4")
+                      .attr("transform", "translate(20,5)");
+
+                      strip_rect2.append("rect")
+                        .attr("width", "15px")
+                        .attr("height", "15px")
+                        .attr("transform","translate(5,5)")
+                        .style("fill","#ff4b50");
+
+                      strip_rect2.append("rect")
+                      .attr("width", "15px")
+                      .attr("height", "15px")
+                      .attr("transform","translate(5,5)")
+                      .style("fill",'url(#diagonalHatch2)');
+
+              var strip_rect3 = snap_legend_svg.append("g")
+                    .attr("class", "legend")
+                    .attr('id',"rect_4")
+                    .attr("transform", "translate(40,5)");
+
+                    strip_rect3.append("rect")
+                      .attr("width", "15px")
+                      .attr("height", "15px")
+                      .attr("transform","translate(5,5)")
+                      .style("fill","#cccccc");
+
+                    strip_rect3.append("rect")
+                    .attr("width", "15px")
+                    .attr("height", "15px")
+                    .attr("transform","translate(5,5)")
+                    .style("fill",'url(#diagonalHatch2)');
+                    </script>
+                  <td><span class="font-weight-bold">Insufficient</span> data</td>
+                  <td id="signal-legend"></td>
+                  <script>
+                  var  margin = {top: 5, right: 5, bottom: 5, left: 5};
+                  var signal_legend_svg = d3.select("#signal-legend").append("svg")
+                                        .attr("width", 30 + margin.left + margin.right)
+                                        .attr("height", 15 + margin.top + margin.bottom)
+                                        .attr("id", "d3-plot-legend");
+
+                    var g = signal_legend_svg.append("g")
+                            .attr("class", "legend")
+                            .attr('id',"rect_5")
+                            .attr("transform", "translate(12,5)");
+
+                    var mr = g.append('g')
+              			    .attr('class', 'progress-meter1');
+
+                    var d2 = [1,2,3,4];
+                    var sW = 40, sH=24, barP=4;
+                    var barW = (sW/d2.length);
+
+                    var c3 = ["#343a40","#343a40","#a2abb6", "#a2abb6"];
+
+                  var colorS3 = d3.scale.ordinal()
+                  									 .domain(d2) //20000 For the gray to be shown
+                  									 .range(c3);
+
+                    var xS=d3.scale.linear()
+                      .domain([0,d3.max(d2)])
+                      .range([0,sW]);
+
+                    var yS=d3.scale.linear()
+                      .domain([0,4])
+                      .range([0,sH]);
+
+                  var bCh=mr.selectAll("rect")
+                    . data(d2)
+                    . enter()
+                    . append("rect")
+                    . attr("y", function(d) {
+                          return sH-yS(d)
+                      })
+                    . attr("height", function(d) {
+                            return yS(d);
+                      })
+                    . attr("width", barW-barP)
+                    . attr("transform", function(d,i){
+                          var x = [barW * i,0];
+                          return "translate("+ x +")"
+                    })
+                  	.style("fill", (function (d){return colorS3(d) }));
+                  </script>
+                  <td>Evidence Strength</td>
+                  </tr>
+                </table>
+              </div>
+                  <div id="snapshot-graph" class="d-print-inline-block"></div>
+              </div>
+            </div>
+          <div class="tab-pane fade" id="pills-dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+            <div class="row">
+              <div class="row" style="padding-top:10px;">
+                <div class="form-check">
+                  <label class="form-check-label" style="font-size:16px">
+                    <input id="dataAvailability" name="withoutdata" type="checkbox" class="form-check-input" value="da-0">Hide/Show targets with no data
+                  </label>
+                </div>
+              </div>
+              <div id="dashboard-print" class="container">
+                <div class="row d-print-block" style="justify-content:center;"><h3 class="text-center" id="dashboard-title"></h3></div>
+                <div class="d-none d-print-block">
+                  <p>About the chart</p>
+                  <p>
+                    How likely is it that the targets will be achieved by 2030, judging by the pace of progress thus far?
+                    The dashboard is based on the prediction of 2030 values for indicators under each target.
+                  </p>
+
+                </div>
+                <div class="row d-print-block">
+                  <table id="dashboard-graph-legend" class="table table-sm">
+                    <tr>
+                      <td><svg width="15px" height="15px"><rect width="15px" height="15px" style="fill:#50D16E;"></rect></svg></td>
+                      <td><span class="font-weight-bold">MAINTAIN</span> progress to achieve target</td>
+                      <td><svg width="15px" height="15px"><rect width="15px" height="15px" style="fill:#FFD83E"></rect></svg></td>
+                      <td><span class="font-weight-bold">ACCELERATE</span> progress to achieve target</td>
+                      <td><svg width="15px" height="15px"><rect width="15px" height="15px" style="fill:#FF4B50"></rect></svg></td>
+                      <td><span class="font-weight-bold">REVERSE</span> trend to achieve target</td>
+                      <td><svg width="15px" height="15px"><rect width="15px" height="15px" style="fill:#dddddd"></rect></svg></td>
+                      <td>Insufficient data</td>
+                    </tr>
+                  </table>
+                </div>
+                <div id="dashboard-graph" class="card-columns d-print-block"></div>
+             </div>
+           </div>
+          </div>
+          <div class="tab-pane fade" id="pills-magnitude" role="tabpanel" aria-labelledby="magnitude-tab">
+            <div class="row" style="padding-top:10px;">
+                <div id="GoalSelectorDiv" class="col-md-6">
+                  <div class="btn-group dropright" id="GoalSelector">
+                  <button class="btn btn-outline-primary dropdown-toggle" type="button" data-boundary="GoalSelectorDiv"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Select Goal
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li class="list-group-item"><a class="dropdown-item1" id="0">Select All Goals</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="1">1 No poverty</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="2">2 Zero hunger</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="3">3 Good health and well-being</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="4">4 Quality education</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="5">5 Gender equality</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="6">6 Clean water and sanitation</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="7">7 Affordable and clean energy</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="8">8 Decent work and economic growth</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="9">9 Industry, innovation and infrastructure</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="10">10 Reduced inequalities</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="11">11 Sustainable cities and communities</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="12">12 Responsible consumption and production</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="13">13 Climate action</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="14">14 Life below water</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="15">15 Life on land</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="16">16 Peace, justice and strong institutions</a></li>
+                    <li class="list-group-item"><a class="dropdown-item1" id="17">17 Partnership for the goals</a></li>
+                  </ul>
+                </div>
+              </div>
+            <div id="magnitude-print" class="container">
+              <div class="row d-print-block" style="padding-top:5px;justify-content:center;"><h3 class="text-center" id="magnitude-title"></h3></div>
+              <div class="d-none d-print-block">
+                <p>About the chart</p>
+                <p>
+                  Indicators for which the country is “on track” and expected to achieve the target value by 2030 are listed below.
+                  The bar chart shows the magnitude of the gap between the predicted and target values of indicators that are not expected
+                  to hit the target by 2030. Red bars refer to indicators for which the trend needs to be reversed, and yellow bars to
+                  indicators for which progress needs to be accelerated.
+                </p>
+
+
+              </div>
+              <div class="row d-print-block">
+                <table id="mag-graph-legend" class="table table-sm">
+                  <tr>
+                  <td class="text-right"><svg width="15px" height="15px"><rect width="15px" height="15px" style="fill:#50D16E;"></rect></svg></td>
+                  <td><span class="font-weight-bold">ON-TRACK</span> Indicators</td>
+                  <td class="text-right"><svg width="15px" height="15px"><rect width="15px" height="15px" style="fill:#FFD83E"></rect></svg></td>
+                  <td><span class="font-weight-bold">ACCELERATE</span> progress</td>
+                  <td class="text-right"><svg width="15px" height="15px"><rect width="15px" height="15px" style="fill:#FF4B50"></rect></svg></td>
+                  <td><span class="font-weight-bold">REVERSE</span> trend</td>
+                </tr>
+                </table>
+              </div>
+                <div id="mag-achieving" class="d-print-block">
+                  <h3 class="card-title">On-track indicators</h3>
+                    <table id="mag-gap-content" class="table table-sm"></table>
+                </div>
+                <div id="magnitude-graph" class="d-print-block"></div>
+           </div>
+         </div>
+        </div>
+        </div>
+      </div>
+    </div>
+    <script>
+    var region = 'BGD';
+    var region_text ='Bangladesh';
+    var g_select = '';
+
+        g_select = 0;
+
+        //Generating the Snapshot Graph
+        $('#snapshot-graph').empty();
+        snapShotGraph(region, region_text);
+        $('#snapshot-title').html('Snapshot of '+ region_text+' for 2019-2020').show()
+
+        //Generation the Dashboard Graph
+        var da = 'da-0';
+        $('#dashboard-graph').empty();
+        dashBoardGraph(region,region_text,da);
+        $('#dashboard-title').html('Dashboard of '+ region_text+' for 2019-2020').show()
+
+        //Generating the Magnitude Graph
+        $('#magnitude-graph').empty();
+        progressGapGraph(region,region_text,g_select);
+        $('#magnitude-title').html('Progress Gap of '+ region_text+' for 2019-2020').show()
+
+
+
+      //Redraw the dashboard graph according to the data availability status
+      $('input[name="withoutdata"]').on('click',function(){
+        if($(this).is(':checked')){
+          da = $(this).val();
+        }else{
+          da = 'da-1';
+        }
+        $('#dashboard-graph').empty();
+        dashBoardGraph(region,region_text,da);
+       });
+
+      //Redraw the magnitude graph according to goal
+      $('.dropdown-item1').click(function(){
+        g_select = $(this).attr('id');
+        $('#magnitude-graph').empty();
+        $('#mag-gap-content').empty();
+        progressGapGraph(region,region_text,g_select);
+      });
+    </script>
+  </body>
